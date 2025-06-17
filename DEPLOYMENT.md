@@ -1,236 +1,117 @@
-# Deployment Guide for Railway
+# Deployment Guide for Replit
 
-## 🚂 Deploying to Railway
+## 🚀 Deploying to Replit
 
 ### Prerequisites
-1. A [Railway](https://railway.app/) account
-2. [Railway CLI](https://docs.railway.app/develop/cli) installed
-3. Git installed on your machine
+1. A [Replit](https://replit.com/) account
+2. Git installed on your machine (for pushing/pulling code)
 
 ### Step 1: Prepare Your Project
 
-1. **Frontend (Next.js)**
+- **Project Structure**
+  - **FastAPI backend**: `main.py` (Python)
+  - **Next.js frontend**: `/app` directory (Node.js)
+  - **requirements.txt**: Python dependencies
+  - **package.json**: Node.js dependencies
+
+### Step 2: Install Dependencies
+
+In the Replit Shell, run:
 ```bash
-# Build the Next.js application
-npm run build
-
-# Create a railway.toml file
-cat > railway.toml << EOL
-[build]
-builder = "nixpacks"
-buildCommand = "npm run build"
-
-[deploy]
-startCommand = "npm start"
-healthcheckPath = "/"
-healthcheckTimeout = 100
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 10
-EOL
-```
-
-2. **Backend (FastAPI)**
-```bash
-# Create requirements.txt if not exists
-pip freeze > requirements.txt
-
-# Create a Procfile
-echo "web: uvicorn main:app --host 0.0.0.0 --port \$PORT" > Procfile
-```
-
-### Step 2: Initialize Railway Project
-
-```bash
-# Login to Railway
-railway login
-
-# Initialize project
-railway init
-
-# Link to existing project (if applicable)
-railway link
+pip install -r requirements.txt
+npm install
 ```
 
 ### Step 3: Configure Environment Variables
+- Use the Replit Secrets tab to add these (see `.env.example`):
+  - `SECRET_KEY`
+  - `ALLOWED_ORIGINS` (e.g., `https://<your-replit-username>.<your-replit-project>.repl.co`)
+  - `NEXT_PUBLIC_API_URL` (e.g., `https://<your-replit-username>.<your-replit-project>.repl.co`)
 
-```bash
-# Set environment variables
-railway variables set \
-  NEXT_PUBLIC_API_URL=https://your-backend-url.railway.app \
-  DATABASE_URL=your_database_url \
-  TESSERACT_PATH=/usr/bin/tesseract
+### Step 4: CORS Setup
+- The backend (`main.py`) uses CORS and will read allowed origins from `ALLOWED_ORIGINS`.
+- Make sure your frontend and backend URLs are included.
+
+### Step 5: Running Both Servers
+- **Option 1: Two Shell Tabs**
+  - Tab 1: Run FastAPI backend
+    ```bash
+    uvicorn main:app --host=0.0.0.0 --port=8000
+    ```
+  - Tab 2: Run Next.js frontend
+    ```bash
+    npm run dev -- --port 3000
+    ```
+- **Option 2: Use `concurrently`**
+  - Install concurrently:
+    ```bash
+    npm install concurrently --save-dev
+    ```
+  - Add to `package.json` scripts:
+    ```json
+    "dev:all": "concurrently \"uvicorn main:app --host=0.0.0.0 --port=8000\" \"next dev -p 3000\""
+    ```
+  - Run both:
+    ```bash
+    npm run dev:all
+    ```
+
+### Step 6: .replit File Example
+```toml
+run = "uvicorn main:app --host=0.0.0.0 --port=8000"
+language = "python3"
+entrypoint = "main.py"
 ```
+- For Next.js, use a second shell tab.
 
-### Step 4: Deploy
+### Step 7: Accessing the App
+- **Backend (FastAPI):** `https://<your-replit-username>.<your-replit-project>.repl.co/docs`
+- **Frontend (Next.js):** `https://<your-replit-username>.<your-replit-project>.repl.co` (if using Replit's webview, or port 3000 if running locally)
 
-```bash
-# Deploy to Railway
-railway up
-```
+### Step 8: Static Files
+- All static assets (charts, images, etc.) should be in `/public` for Next.js.
+- If your backend serves files, ensure the URLs are correct and accessible.
 
-### Step 5: Verify Deployment
+### Step 9: Production Tips
+- Use Replit Secrets for all sensitive environment variables.
+- Make sure CORS is set up for your deployed Replit URL.
+- For best results, run backend and frontend in separate tabs or use a process manager.
 
-1. Check the deployment logs:
-```bash
-railway logs
-```
-
-2. Monitor the application:
-```bash
-railway status
-```
-
-## 🔧 Configuration
-
-### Frontend Configuration
-
-1. **Next.js Configuration**
-```typescript
-// next.config.js
-module.exports = {
-  output: 'standalone',
-  env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
-}
-```
-
-2. **CORS Configuration**
-```typescript
-// Backend CORS settings
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://your-frontend-url.railway.app"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-### Backend Configuration
-
-1. **FastAPI Configuration**
-```python
-# main.py
-import os
-
-app = FastAPI(
-    title="EcoTown Health API",
-    description="Healthcare analytics API",
-    version="1.0.0",
-    docs_url="/docs" if os.getenv("ENVIRONMENT") == "development" else None,
-)
-```
-
-2. **Tesseract OCR Configuration**
-```python
-# Ensure Tesseract is installed in the Railway environment
-if os.getenv("RAILWAY_ENVIRONMENT"):
-    pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_PATH")
-```
-
-## 📊 Monitoring
-
-### Railway Dashboard
-- Monitor application health
-- View logs and metrics
-- Configure auto-scaling
-- Set up alerts
-
-### Health Checks
-```bash
-# Configure health check endpoint
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
-```
-
-## 🔄 Continuous Deployment
-
-### GitHub Integration
-1. Connect your GitHub repository to Railway
-2. Configure automatic deployments
-3. Set up deployment environments (staging/production)
-
-### Deployment Workflow
-1. Push to main branch
-2. Railway automatically builds and deploys
-3. Run health checks
-4. Update DNS if needed
+---
 
 ## 🛠️ Troubleshooting
 
 ### Common Issues
 
-1. **Build Failures**
-```bash
-# Check build logs
-railway logs --build
-```
-
-2. **Runtime Errors**
-```bash
-# Check application logs
-railway logs --app
-```
-
-3. **Environment Variables**
-```bash
-# List all environment variables
-railway variables list
-```
+1. **Dependency Issues**
+   - Ensure all dependencies are installed with `pip install -r requirements.txt` and `npm install`.
+2. **Port Conflicts**
+   - Make sure FastAPI runs on 8000 and Next.js on 3000.
+3. **CORS Errors**
+   - Double-check `ALLOWED_ORIGINS` in your backend and `NEXT_PUBLIC_API_URL` in your frontend.
+4. **Environment Variables**
+   - Use the Replit Secrets tab for all sensitive data.
 
 ### Support Resources
-- [Railway Documentation](https://docs.railway.app/)
+- [Replit Docs](https://docs.replit.com/)
 - [FastAPI Deployment Guide](https://fastapi.tiangolo.com/deployment/)
 - [Next.js Deployment Guide](https://nextjs.org/docs/deployment)
 
 ## 🔒 Security Considerations
 
 1. **Environment Variables**
-- Never commit sensitive data
-- Use Railway's secret management
-- Rotate credentials regularly
-
+   - Never commit sensitive data
+   - Use Replit's secret management
+   - Rotate credentials regularly
 2. **API Security**
-- Implement rate limiting
-- Use HTTPS only
-- Set up CORS properly
-
+   - Implement rate limiting
+   - Use HTTPS only
+   - Set up CORS properly
 3. **Data Protection**
-- Encrypt sensitive data
-- Implement proper authentication
-- Regular security audits
-
-## 📈 Scaling
-
-### Auto-scaling Configuration
-```toml
-# railway.toml
-[deploy]
-autoScaling = true
-minInstances = 1
-maxInstances = 3
-```
-
-### Resource Allocation
-- Monitor CPU/Memory usage
-- Adjust instance size as needed
-- Set up alerts for resource thresholds
-
-## 🔄 Backup and Recovery
-
-### Database Backups
-```bash
-# Configure automated backups
-railway backup create
-```
-
-### Recovery Procedures
-1. Document recovery steps
-2. Test recovery process
-3. Maintain backup schedule
+   - Encrypt sensitive data
+   - Implement proper authentication
+   - Regular security audits
 
 ---
 
-**Note**: This guide assumes you have the necessary permissions and access to deploy to Railway. Always follow your organization's deployment policies and security guidelines. 
+**Note**: This guide assumes you have the necessary permissions and access to deploy to Replit. Always follow your organization's deployment policies and security guidelines. 

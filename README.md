@@ -201,3 +201,89 @@ vercel --prod
 ---
 
 **Built with ❤️ for healthcare professionals using cutting-edge AI development tools**
+
+## 🚀 Replit Deployment Guide
+
+### 1. **Fork or Import the Project**
+- [Fork this repo on GitHub](https://github.com/Dileep-kumarc/biomarker-insight-dashboard.git) or import it directly into [Replit](https://replit.com/).
+
+### 2. **Project Structure**
+- **FastAPI backend**: `main.py` (Python)
+- **Next.js frontend**: `/app` directory (Node.js)
+- **requirements.txt**: Python dependencies
+- **package.json**: Node.js dependencies
+
+### 3. **Install Dependencies**
+- In the Replit Shell, run:
+  ```bash
+  pip install -r requirements.txt
+  npm install
+  ```
+
+### 4. **Environment Variables**
+- Use the Replit Secrets tab to add these (see `.env.example`):
+  - `SECRET_KEY`
+  - `ALLOWED_ORIGINS` (e.g., `https://<your-replit-username>.<your-replit-project>.repl.co`)
+  - `NEXT_PUBLIC_API_URL` (e.g., `https://<your-replit-username>.<your-replit-project>.repl.co`)
+
+### 5. **CORS Setup**
+- The backend (`main.py`) uses CORS and will read allowed origins from `ALLOWED_ORIGINS`.
+- Make sure your frontend and backend URLs are included.
+
+### 6. **Running Both Servers**
+- **Option 1: Two Shell Tabs**
+  - Tab 1: Run FastAPI backend
+    ```bash
+    uvicorn main:app --host=0.0.0.0 --port=8000
+    ```
+  - Tab 2: Run Next.js frontend
+    ```bash
+    npm run dev -- --port 3000
+    ```
+- **Option 2: Use `concurrently`**
+  - Install concurrently:
+    ```bash
+    npm install concurrently --save-dev
+    ```
+  - Add to `package.json` scripts:
+    ```json
+    "dev:all": "concurrently \"uvicorn main:app --host=0.0.0.0 --port=8000\" \"next dev -p 3000\""
+    ```
+  - Run both:
+    ```bash
+    npm run dev:all
+    ```
+
+### 7. **.replit File Example**
+```toml
+run = "uvicorn main:app --host=0.0.0.0 --port=8000"
+language = "python3"
+entrypoint = "main.py"
+```
+- For Next.js, use a second shell tab.
+
+### 8. **Accessing the App**
+- **Backend (FastAPI):** `https://<your-replit-username>.<your-replit-project>.repl.co/docs`
+- **Frontend (Next.js):** `https://<your-replit-username>.<your-replit-project>.repl.co` (if using Replit's webview, or port 3000 if running locally)
+
+### 9. **Static Files**
+- All static assets (charts, images, etc.) should be in `/public` for Next.js.
+- If your backend serves files, ensure the URLs are correct and accessible.
+
+### 10. **Production Tips**
+- Use Replit Secrets for all sensitive environment variables.
+- Make sure CORS is set up for your deployed Replit URL.
+- For best results, run backend and frontend in separate tabs or use a process manager.
+
+---
+
+## 📦 Other Deployment Options
+- [Vercel (for Next.js)](https://vercel.com/)
+- [Railway (for FastAPI)](https://railway.app/)
+- [Render, Fly.io, etc.]
+
+---
+
+## 📝 For more details, see the full documentation in `DEPLOYMENT.md` and `TECHNICAL.md`.
+
+---
