@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
+pillow
+numpy
+pdf2image
+PyPDF2
+tesserocr
+python-dotenv 
