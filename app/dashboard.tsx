@@ -265,7 +265,6 @@ export default function EcoTownHealthDashboard() {
           >
             <UploadReport 
               onUpload={handleUpload} 
-              onDataExtracted={handlePDFDataExtracted}
               isUploading={isUploading}
               uploadError={uploadError}
             />
