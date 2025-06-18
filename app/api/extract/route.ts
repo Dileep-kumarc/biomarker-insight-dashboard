@@ -1,7 +1,9 @@
+// Path: app/api/extract/route.ts
+
 import { NextRequest, NextResponse } from 'next/server'
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Set the workerSrc to ensure it works correctly in the Vercel environment
+// Set the workerSrc to ensure it works correctly in the Vercel serverless environment
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`
 
 export const runtime = 'nodejs'
