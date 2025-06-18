@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import React, { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Upload, FileText, CheckCircle, AlertTriangle } from "lucide-react"
+import { Upload, CheckCircle, AlertTriangle } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 
 interface UploadReportProps {
@@ -78,7 +78,6 @@ export function UploadReport({ onUpload, onDataExtracted }: UploadReportProps) {
             )}
             {uploadStatus === "uploading" && (
               <>
-                <FileText className="h-8 w-8 text-blue-500 animate-pulse" />
                 <p className="text-sm text-blue-600">Processing your report...</p>
               </>
             )}

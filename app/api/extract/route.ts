@@ -1,7 +1,7 @@
 // Path: app/api/extract/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
-import * as pdfjsLib from 'pdfjs-dist'
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 
 // Set the workerSrc to ensure it works correctly in the Vercel serverless environment
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       const page = await pdf.getPage(i)
       const content = await page.getTextContent()
       // Type guard to ensure item has 'str' property
-      text += content.items.map((item) => ('str' in item ? item.str : '')).join(' ') + '\n'
+      text += content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n'
     }
 
     if (text.trim().length > 100) {

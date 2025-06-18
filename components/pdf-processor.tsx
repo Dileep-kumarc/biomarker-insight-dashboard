@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CircleDot, Activity } from "lucide-react"
+import { CheckCircle, Activity } from "lucide-react"
 import React from "react"
 import dynamic from "next/dynamic"
 
@@ -42,7 +42,7 @@ export function PDFProcessor({ onDataExtracted, uploadedFile }: PDFProcessorProp
         <div className="space-y-4">
           {/* Status Icons - Using verified basic icons */}
           <div className="flex items-center space-x-2">
-            <CircleDot className="h-5 w-5 text-blue-600" />
+            <CheckCircle className="h-5 w-5 text-blue-600" />
             <span className="text-sm text-gray-600">Extracting text from PDF...</span>
           </div>
 

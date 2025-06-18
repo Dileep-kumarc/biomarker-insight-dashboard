@@ -13,8 +13,12 @@ export interface BiomarkerValue {
 
 export interface BiomarkerData {
   name: string
+  category: string
   currentValue: BiomarkerValue
   history: BiomarkerValue[]
+  description?: string
+  clinicalSignificance?: string
+  recommendations?: string[]
 }
 
 export interface PatientInfo {
