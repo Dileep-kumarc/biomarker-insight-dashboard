@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import ALL_METHODS
 import re
 from pdf2image import convert_from_bytes
 from PyPDF2 import PdfReader
@@ -23,19 +24,12 @@ except ImportError:
 # --- FastAPI App Initialization ---
 app = FastAPI()
 
-# CORS setup
-origins = [
-    "http://localhost:3000",
-    "https://biomarks.netlify.app",
-    "https://*.railway.app",
-    "https://working8-6oi6-iczczu23h-dileeps-projects-6b5a3740.vercel.app" # Example Vercel domain
-]
-
+# CORS setup - Allowing Netlify and Vercel domains, including wildcards for subdomains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=r"https://.*\.(vercel|netlify)\.app",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=ALL_METHODS,
     allow_headers=["*"],
 )
 
