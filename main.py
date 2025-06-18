@@ -23,11 +23,17 @@ except ImportError:
 # --- FastAPI App Initialization ---
 app = FastAPI()
 
-# CORS setup - Allowing all origins
-# Note: For production environments, it is more secure to specify allowed origins explicitly.
+# CORS setup
+origins = [
+    "http://localhost:3000",
+    "https://biomarks.netlify.app",
+    "https://*.railway.app",
+    "https://working8-6oi6-iczczu23h-dileeps-projects-6b5a3740.vercel.app" # Example Vercel domain
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

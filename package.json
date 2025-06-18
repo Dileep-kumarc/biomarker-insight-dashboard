@@ -20,7 +20,7 @@
     "framer-motion": "^10.18.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
-    "lucide-react": "^0.517.0",
+    "lucide-react": "^0.610.0",
     "multer": "^2.0.1",
     "next": "15.2.4",
     "pdf-parse": "^1.1.1",
