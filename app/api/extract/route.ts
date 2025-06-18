@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as pdfjsLib from 'pdfjs-dist'
+
+// Set the workerSrc to ensure it works correctly in the Vercel environment
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`
 
 export const runtime = 'nodejs'
 
@@ -14,18 +18,14 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const data = new Uint8Array(arrayBuffer)
 
-    // Use legacy build for Node.js
-    // @ts-ignore
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js')
-    pdfjsLib.GlobalWorkerOptions.workerSrc = null
-
     const pdf = await pdfjsLib.getDocument({ data }).promise
 
     let text = ''
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i)
       const content = await page.getTextContent()
-      text += content.items.map((item: any) => item.str).join(' ') + '\n'
+      // Type guard to ensure item has 'str' property
+      text += content.items.map((item) => ('str' in item ? item.str : '')).join(' ') + '\n'
     }
 
     if (text.trim().length > 100) {
@@ -33,8 +33,10 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json({ text: '', method: 'ocr-needed' })
     }
-  } catch (err: any) {
+  } catch (err) {
     console.error("PDF Extraction Error:", err)
-    return NextResponse.json({ error: 'Extraction failed', details: err.message }, { status: 500 })
+    // Proper error handling
+    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
+    return NextResponse.json({ error: 'Extraction failed', details: errorMessage }, { status: 500 })
   }
 }
