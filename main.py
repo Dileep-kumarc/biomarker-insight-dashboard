@@ -24,7 +24,7 @@ except ImportError:
 app = FastAPI()
 
 # CORS setup
-origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://*.railway.app,https://working8-6oi6-iczczu23h-dileeps-projects-6b5a3740.vercel.app,https://biomarksextract.netlify.app").split(",")
+origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,https://*.railway.app,https://working8-6oi6-iczczu23h-dileeps-projects-6b5a3740.vercel.app,https://biomarksextract.netlify.app,https://biomarks.netlify.app").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in origins],

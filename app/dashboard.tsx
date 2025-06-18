@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from "framer-motion";
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -43,28 +43,30 @@ interface BiomarkerGroups {
 // Remove unused motion component declaration
 
 export default function EcoTownHealthDashboard() {
-  const [selectedBiomarker, setSelectedBiomarker] = React.useState("Total Cholesterol")
-  const [dateRange, setDateRange] = React.useState("all-time")
-  const [showUpload, setShowUpload] = React.useState(false)
-  const [selectedGroup, setSelectedGroup] = React.useState("Lipid Profile")
-  const [uploadedBiomarkerData, setUploadedBiomarkerData] = React.useState<any>(null)
-  const [forceUpdate, setForceUpdate] = React.useState(0)
+  const [selectedBiomarker, setSelectedBiomarker] = useState("Total Cholesterol")
+  const [dateRange, setDateRange] = useState("all-time")
+  const [showUpload, setShowUpload] = useState(false)
+  const [selectedGroup, setSelectedGroup] = useState("Lipid Profile")
+  const [uploadedBiomarkerData, setUploadedBiomarkerData] = useState<any>(null)
+  const [forceUpdate, setForceUpdate] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   // NEW: Use state for patient info and biomarker data with correct types
-  const [patientInfo, setPatientInfo] = React.useState<PatientInfo>(initialPatientInfo)
-  const [biomarkerData, setBiomarkerData] = React.useState<Record<string, BiomarkerData>>(initialBiomarkerData)
+  const [patientInfo, setPatientInfo] = useState<PatientInfo>(initialPatientInfo)
+  const [biomarkerData, setBiomarkerData] = useState<Record<string, BiomarkerData>>(initialBiomarkerData)
 
   const biomarkerKeys = Object.keys(biomarkerData)
 
   // Calculate dynamic summary statistics
-  const [summaryStats, setSummaryStats] = React.useState({
+  const [summaryStats, setSummaryStats] = useState({
     total: 0,
     normal: 0,
     outOfRange: 0,
     improving: 0,
   })
 
-  const calculateSummaryStats = () => {
+  const calculateSummaryStats = useCallback(() => {
     const total = biomarkerKeys.length
     const normal = biomarkerKeys.filter((key) => biomarkerData[key].currentValue.status === "Normal").length
     const outOfRange = biomarkerKeys.filter(
@@ -95,14 +97,43 @@ export default function EcoTownHealthDashboard() {
     }).length
 
     setSummaryStats({ total, normal, outOfRange, improving })
-  }
+  }, [biomarkerData, biomarkerKeys])
 
-  React.useEffect(() => {
+  useEffect(() => {
     calculateSummaryStats()
-  }, [forceUpdate, biomarkerData])
+  }, [biomarkerData, calculateSummaryStats])
 
   const handleUpload = async (file: File) => {
+    setIsUploading(true)
+    setUploadError(null)
     console.log("Processing uploaded file:", file.name)
+
+    const formData = new FormData()
+    formData.append("file", file)
+
+    try {
+      const response = await fetch('https://passionate-eagerness-production-3c4a.up.railway.app/extract', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred' }))
+        throw new Error(`Upload failed with status ${response.status}: ${errorData.detail}`)
+      }
+
+      const extractedData = await response.json()
+      handlePDFDataExtracted(extractedData)
+    } catch (error) {
+      console.error("Error during file upload:", error)
+      if (error instanceof Error) {
+        setUploadError(error.message)
+      } else {
+        setUploadError('An unexpected error occurred. Please try again.')
+      }
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handlePDFDataExtracted = (extractedData: any) => {
@@ -174,7 +205,9 @@ export default function EcoTownHealthDashboard() {
     const link = document.createElement("a")
     link.href = url
     link.download = `ecotown-health-${patientInfo.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json`
+    document.body.appendChild(link) // Required for Firefox
     link.click()
+    document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }
 
@@ -204,6 +237,11 @@ export default function EcoTownHealthDashboard() {
     )
   }
 
+  const [isClient, setIsClient] = useState(false)
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   return (
     <div className="min-h-screen font-sans">
       {/* Mobile Responsive Header */}
@@ -218,14 +256,19 @@ export default function EcoTownHealthDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Upload Section */}
-        {showUpload && (
+        {isClient && showUpload && (
           <motion.div 
             className="mb-4 sm:mb-6 glass-card"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            <UploadReport onUpload={handleUpload} onDataExtracted={handlePDFDataExtracted} />
+            <UploadReport 
+              onUpload={handleUpload} 
+              onDataExtracted={handlePDFDataExtracted}
+              isUploading={isUploading}
+              uploadError={uploadError}
+            />
           </motion.div>
         )}
 
