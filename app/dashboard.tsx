@@ -101,7 +101,7 @@ export default function EcoTownHealthDashboard() {
 
   useEffect(() => {
     calculateSummaryStats()
-  }, [biomarkerData, calculateSummaryStats])
+  }, [calculateSummaryStats])
 
   const handleUpload = async (file: File) => {
     setIsUploading(true)
