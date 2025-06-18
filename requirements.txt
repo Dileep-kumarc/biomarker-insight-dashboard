@@ -1,8 +1,9 @@
+
 fastapi
 uvicorn[standard]
 python-multipart
 pydantic
-requests
-pandas
-sqlalchemy
+pdf2image
+pillow
+python-dotenv
 # Add any other packages you actually use in your FastAPI code
