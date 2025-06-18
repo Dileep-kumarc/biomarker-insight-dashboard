@@ -41,13 +41,13 @@ export function BiomarkerChart({ data, normalRange, unit, biomarker }: Biomarker
             y={normalRange.min}
             stroke="#10b981"
             strokeDasharray="5 5"
-            label={{ value: "Normal Min", position: "topRight" }}
+            label={{ value: "Normal Min", position: "right" }}
           />
           <ReferenceLine
             y={normalRange.max}
             stroke="#10b981"
             strokeDasharray="5 5"
-            label={{ value: "Normal Max", position: "topRight" }}
+            label={{ value: "Normal Max", position: "right" }}
           />
 
           <ChartTooltip
