@@ -1,4 +1,5 @@
 fastapi
+pytesseract
 uvicorn[standard]
 python-multipart
 pydantic
