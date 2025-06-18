@@ -41,7 +41,7 @@ interface BiomarkerGroups {
 }
 
 // Create a specific motion heading component
-const MotionHeading = motion.h2;
+// Remove unused motion component declaration
 
 export default function EcoTownHealthDashboard() {
   const [selectedBiomarker, setSelectedBiomarker] = React.useState("Total Cholesterol")
