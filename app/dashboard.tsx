@@ -1,7 +1,8 @@
 "use client"
 
 import React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from "framer-motion";
+import { HTMLMotionComponents } from "framer-motion/dist/framer-motion";
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MobileResponsiveHeader } from '@/components/mobile-responsive-header'
@@ -38,6 +39,9 @@ interface BiomarkerGroupData {
 interface BiomarkerGroups {
   [key: string]: BiomarkerGroupData
 }
+
+// Create a specific motion heading component
+const MotionHeading = motion.h2;
 
 export default function EcoTownHealthDashboard() {
   const [selectedBiomarker, setSelectedBiomarker] = React.useState("Total Cholesterol")
@@ -261,14 +265,16 @@ export default function EcoTownHealthDashboard() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
             >
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4"
-              >
-                Biomarker Overview
-              </motion.h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="inline-block"
+                >
+                  Biomarker Overview
+                </motion.div>
+              </h2>
               <Tabs value={selectedGroup} onValueChange={setSelectedGroup} className="w-full">
                 <TabsList className="w-full justify-start mb-4 bg-gray-100/50 p-1 overflow-x-auto flex-nowrap">
                   {Object.keys(biomarkerGroups).map((group) => (
@@ -310,14 +316,16 @@ export default function EcoTownHealthDashboard() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.18 }}
             >
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4"
-              >
-                Trend Analysis
-              </motion.h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-block"
+                >
+                  Trend Analysis
+                </motion.div>
+              </h2>
               {renderBiomarkerChart(selectedGroup)}
             </motion.div>
 
@@ -328,14 +336,16 @@ export default function EcoTownHealthDashboard() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.25 }}
             >
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4"
-              >
-                Clinical Interpretation Guide
-              </motion.h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="inline-block"
+                >
+                  Clinical Interpretation Guide
+                </motion.div>
+              </h2>
               <ClinicalInterpretationGuide />
             </motion.div>
           </div>
@@ -348,14 +358,16 @@ export default function EcoTownHealthDashboard() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
             >
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.32 }}
-                className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4"
-              >
-                Health Insights
-              </motion.h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.32 }}
+                  className="inline-block"
+                >
+                  Health Insights
+                </motion.div>
+              </h2>
               <HealthInsights patientInfo={patientInfo} biomarkerData={biomarkerData} />
             </motion.div>
 
@@ -365,14 +377,16 @@ export default function EcoTownHealthDashboard() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.42 }}
-                className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4"
-              >
-                Personalized Action Plan
-              </motion.h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.42 }}
+                  className="inline-block"
+                >
+                  Personalized Action Plan
+                </motion.div>
+              </h2>
               <ActionPlan />
             </motion.div>
           </div>
@@ -380,4 +394,4 @@ export default function EcoTownHealthDashboard() {
       </div>
     </div>
   )
-} 
+}
