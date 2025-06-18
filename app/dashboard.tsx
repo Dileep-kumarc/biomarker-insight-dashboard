@@ -1,8 +1,7 @@
 "use client"
 
 import React from 'react'
-import { motion, AnimatePresence } from "framer-motion";
-import { HTMLMotionComponents } from "framer-motion/dist/framer-motion";
+import { motion } from "framer-motion";
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MobileResponsiveHeader } from '@/components/mobile-responsive-header'
