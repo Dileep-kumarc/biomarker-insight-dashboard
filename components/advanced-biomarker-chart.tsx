@@ -84,14 +84,14 @@ export function AdvancedBiomarkerChart({ biomarker }: AdvancedBiomarkerChartProp
                 y={referenceRange.min}
                 stroke="#10b981"
                 strokeDasharray="5 5"
-                label={{ value: "Normal Min", position: "topRight", fontSize: 10 }}
+                label={{ value: "Normal Min", position: "right", fontSize: 10 }}
               />
             )}
             <ReferenceLine
               y={referenceRange.max}
               stroke="#10b981"
               strokeDasharray="5 5"
-              label={{ value: "Normal Max", position: "topRight", fontSize: 10 }}
+              label={{ value: "Normal Max", position: "right", fontSize: 10 }}
             />
 
             {referenceRange.optimal && (
@@ -99,7 +99,7 @@ export function AdvancedBiomarkerChart({ biomarker }: AdvancedBiomarkerChartProp
                 y={referenceRange.optimal}
                 stroke="#059669"
                 strokeDasharray="2 2"
-                label={{ value: "Optimal", position: "topRight", fontSize: 10 }}
+                label={{ value: "Optimal", position: "right", fontSize: 10 }}
               />
             )}
 
@@ -109,22 +109,25 @@ export function AdvancedBiomarkerChart({ biomarker }: AdvancedBiomarkerChartProp
                 const point = payload?.[0]?.payload
                 return point?.formattedDate || value
               }}
-              formatter={(value: number, name, props) => [
-                `${value} ${unit}`,
-                biomarker.name,
-                <span
-                  key={`${value}-${name}`}
-                  className={`ml-2 px-2 py-1 rounded text-xs ${
-                    props.payload.status === "Normal"
-                      ? "bg-green-100 text-green-800"
-                      : props.payload.status === "Low"
-                        ? "bg-blue-100 text-blue-800"
+              formatter={(value, name, props: any) => {
+                const status = props?.payload?.status
+                return [
+                  `${value} ${unit}`,
+                  biomarker.name,
+                  <span
+                    key={`${value}-${name}`}
+                    className={`ml-2 px-2 py-1 rounded text-xs ${
+                      status === "Normal"
+                        ? "bg-green-100 text-green-800"
+                        : status === "Low"
+                        ? "bg-yellow-100 text-yellow-800"
                         : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  {props.payload.status}
-                </span>,
-              ]}
+                    }`}
+                  >
+                    {status}
+                  </span>,
+                ]
+              }}
             />
 
             <Area
