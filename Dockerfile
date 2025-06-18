@@ -1,10 +1,11 @@
 FROM python:3.11-slim
 
-# Install system dependencies
+# Install system dependencies (including poppler-utils and tesseract-ocr)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     poppler-utils \
-    && rm -rf /var/lib/apt/lists/*
+    tesseract-ocr && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
