@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react"
+import { Upload, FileText, CheckCircle, AlertTriangle } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 
 interface UploadReportProps {
@@ -28,7 +28,7 @@ export function UploadReport({ onUpload, onDataExtracted }: UploadReportProps) {
         try {
           const formData = new FormData()
           formData.append("file", file)
-          const response = await fetch("http://localhost:8000/extract", {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/extract`, {
             method: "POST",
             body: formData,
           })
@@ -93,7 +93,7 @@ export function UploadReport({ onUpload, onDataExtracted }: UploadReportProps) {
             )}
             {uploadStatus === "error" && (
               <>
-                <AlertCircle className="h-8 w-8 text-red-500" />
+                <AlertTriangle className="h-8 w-8 text-red-500" />
                 <p className="text-sm text-red-600">{error || "Failed to process report"}</p>
               </>
             )}
