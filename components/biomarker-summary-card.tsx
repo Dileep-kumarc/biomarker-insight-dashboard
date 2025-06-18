@@ -5,14 +5,18 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react"
 import type { BiomarkerData } from "../types/biomarker"
+import { useState } from "react"
 
 interface BiomarkerSummaryCardProps {
   biomarker: BiomarkerData
-  onClick: () => void
+  onClick?: () => void
 }
 
 export function BiomarkerSummaryCard({ biomarker, onClick }: BiomarkerSummaryCardProps) {
-  const { name, currentValue } = biomarker
+  const [isHovered, setIsHovered] = useState(false)
+  const [isPressed, setIsPressed] = useState(false)
+  
+  const { currentValue } = biomarker
   const { value, unit, status, trend } = currentValue
 
   const getStatusColor = (status: string) => {
@@ -57,35 +61,40 @@ export function BiomarkerSummaryCard({ biomarker, onClick }: BiomarkerSummaryCar
   }
 
   const getHealthMessage = () => {
-    if (status === "Low" && name === "HDL Cholesterol") {
+    if (status === "Low" && biomarker.name === "HDL Cholesterol") {
       return "Low HDL – consider lifestyle changes and omega-3 supplements"
     }
-    if (status === "High" && name === "Triglycerides") {
+    if (status === "High" && biomarker.name === "Triglycerides") {
       return "Elevated triglycerides – reduce refined carbs, increase exercise"
     }
-    if (status === "High" && name === "Creatinine") {
+    if (status === "High" && biomarker.name === "Creatinine") {
       return "Slightly elevated – monitor kidney function, stay hydrated"
     }
-    if (status === "Normal" && name === "Vitamin D") {
+    if (status === "Normal" && biomarker.name === "Vitamin D") {
       return "Great improvement from deficient to normal levels!"
     }
     return `${status} levels – continue current management`
   }
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+    <Card
+      onClick={onClick}
+      className="cursor-pointer overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onMouseDown={() => setIsPressed(true)}
+      onMouseUp={() => setIsPressed(false)}
     >
-      <Card
-        className={`group cursor-pointer bg-white/60 backdrop-blur-sm hover:bg-white/90 transition-all duration-300 
-        border-l-4 ${getStatusBorder(status)} shadow-sm hover:shadow-lg hover:ring-2 ring-offset-2 ring-offset-white ${getStatusColor(status)}`}
-        onClick={onClick}
+      <motion.div
+        className="w-full h-full"
+        animate={{
+          scale: isPressed ? 0.98 : isHovered ? 1.02 : 1,
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 15 }}
       >
-        <CardContent className="p-5">
+        <CardContent className="pt-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-gray-900 text-sm tracking-tight">{name}</h3>
+            <h3 className="font-semibold text-gray-900 text-sm tracking-tight">{biomarker.name}</h3>
             <div className="flex items-center space-x-2">
               {status === "Critical" && (
                 <motion.div
@@ -105,15 +114,15 @@ export function BiomarkerSummaryCard({ biomarker, onClick }: BiomarkerSummaryCar
             </span>
             <span className="text-sm text-gray-500 font-medium">{unit}</span>
           </div>
-          <Badge 
+          <Badge
             className={`mb-3 text-xs font-medium px-2.5 py-1 rounded-full transition-all duration-300 
             group-hover:ring-2 ${getStatusColor(status)}`}
           >
             {status}
           </Badge>
-          <p className="text-xs text-gray-600 leading-relaxed font-medium">{getHealthMessage()}</p>
+          <p className="text-sm text-gray-600 line-clamp-2">{getHealthMessage()}</p>
         </CardContent>
-      </Card>
-    </motion.div>
+      </motion.div>
+    </Card>
   )
 }
