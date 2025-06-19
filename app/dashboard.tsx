@@ -126,7 +126,7 @@ export default function EcoTownHealthDashboard() {
     formData.append("file", file)
 
     try {
-      const response = await fetch('https://passionate-eagerness-production-3c4a.up.railway.app/extract', {
+      const response = await fetch('/api/extract', {
         method: 'POST',
         body: formData,
       })
