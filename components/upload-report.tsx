@@ -2,7 +2,7 @@
 
 import React, { useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Upload, CheckCircle, AlertTriangle, RotateCcw } from "lucide-react"
+import { Upload, CheckCircle, AlertTriangle, Activity } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 
 interface UploadReportProps {
@@ -47,7 +47,7 @@ export function UploadReport({ onUpload, isUploading, uploadError }: UploadRepor
           <div className="flex flex-col items-center justify-center space-y-2">
             {isUploading ? (
               <>
-                <RotateCcw className="h-8 w-8 text-gray-400 animate-spin" />
+                <Activity className="h-8 w-8 text-gray-400 animate-spin" />
                 <p className="text-sm text-blue-600">Processing your report...</p>
               </>
             ) : uploadError ? (
