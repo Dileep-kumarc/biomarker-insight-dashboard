@@ -20,8 +20,7 @@ origins = [
     "http://localhost",
     "https://biomarker-insight-dashboard.netlify.app",
     "http://127.0.0.1:3000",
-    "http://127.0.0.1",
-    "https://dk-workings.vercel.app",
+    "https://kumar-workings.vercel.app",
     "https://extracction2-vtk3.vercel.app",
 ]
 
