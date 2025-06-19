@@ -8,23 +8,10 @@ from io import BytesIO
 import logging
 import os
 
-# IMPORTANT: You'll need to install pytesseract if you plan to use OCR fallback.
-# Ensure Tesseract-OCR is installed on your system and its path is set in environment variables.
-# You might need to uncomment and install 'Pillow' if not already installed with pdf2image.
-try:
-    import pytesseract
-except ImportError:
-    logging.warning("pytesseract not found. OCR fallback will not work. Please install it if needed.")
-    logging.warning("Install with: pip install pytesseract")
-    # If Tesseract-OCR executable is not in your PATH, you might need to set it:
-    # pytesseract.pytesseract.tesseract_cmd = r'<path_to_your_tesseract_executable>'
-    # Example for Windows: pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-
-# --- FastAPI App Initialization ---
 app = FastAPI()
 
-
+# CORS Setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -32,12 +19,16 @@ app.add_middleware(
         "https://6853883c0d04268f1d7552a9--biomarker-insight-dashboard.netlify.app",
         "https://biomarker-insight-dashboard.netlify.app",
         "https://fixed-working.vercel.app",
-        # Add any other deployed or preview domains here
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.post("/extract")
+async def extract_data(file: UploadFile = File(...)):
+    return {"filename": file.filename}
+
 
 
 logging.basicConfig(level=logging.INFO)
