@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from "framer-motion";
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -66,14 +66,23 @@ export default function EcoTownHealthDashboard() {
     improving: 0,
   })
 
-  const calculateSummaryStats = useCallback(() => {
+  // Memoize biomarker groups
+  const biomarkerGroups = React.useMemo(() => 
+    getDynamicBiomarkerGroups(biomarkerData),
+    [biomarkerData]
+  )
+
+  // Memoize summary stats calculation
+  const calculateSummaryStats = React.useCallback(() => {
     const total = biomarkerKeys.length
-    const normal = biomarkerKeys.filter((key) => biomarkerData[key].currentValue.status === "Normal").length
+    const normal = biomarkerKeys.filter(
+      (key) => biomarkerData[key].currentValue.status === "Normal"
+    ).length
     const outOfRange = biomarkerKeys.filter(
       (key) =>
         biomarkerData[key].currentValue.status === "Low" ||
         biomarkerData[key].currentValue.status === "High" ||
-        biomarkerData[key].currentValue.status === "Critical",
+        biomarkerData[key].currentValue.status === "Critical"
     ).length
     const improving = biomarkerKeys.filter((key) => {
       const history = biomarkerData[key].history
@@ -82,7 +91,12 @@ export default function EcoTownHealthDashboard() {
       const previous = history[history.length - 2].value
 
       // Improvement logic based on biomarker type
-      if (key === "HDL Cholesterol" || key === "Vitamin D" || key === "Hemoglobin" || key === "Vitamin B12") {
+      if (
+        key === "HDL Cholesterol" ||
+        key === "Vitamin D" ||
+        key === "Hemoglobin" ||
+        key === "Vitamin B12"
+      ) {
         return latest > previous // Higher is better
       } else if (
         key === "Total Cholesterol" ||
@@ -96,17 +110,18 @@ export default function EcoTownHealthDashboard() {
       return false
     }).length
 
-    setSummaryStats({ total, normal, outOfRange, improving })
+    return { total, normal, outOfRange, improving }
   }, [biomarkerData, biomarkerKeys])
 
+  // Update summary stats when biomarker data changes
   useEffect(() => {
-    calculateSummaryStats()
+    setSummaryStats(calculateSummaryStats())
   }, [calculateSummaryStats])
 
-  const handleUpload = async (file: File) => {
+  // Memoize handler functions
+  const handleUpload = React.useCallback(async (file: File) => {
     setIsUploading(true)
     setUploadError(null)
-    console.log("Processing uploaded file:", file.name)
 
     const formData = new FormData()
     formData.append("file", file)
@@ -134,48 +149,39 @@ export default function EcoTownHealthDashboard() {
     } finally {
       setIsUploading(false)
     }
-  }
+  }, [])
 
-  const handlePDFDataExtracted = (extractedData: any) => {
-    console.log("Extracted data received:", extractedData)
-    setPatientInfo({ ...extractedData.patientInfo })
-    // Deep clone and update biomarker data
-    const newBiomarkerData = JSON.parse(JSON.stringify(biomarkerData))
-    Object.keys(extractedData.biomarkers).forEach((biomarkerName) => {
-      if (newBiomarkerData[biomarkerName]) {
-        const newData = extractedData.biomarkers[biomarkerName]
-        const currentDate = extractedData.patientInfo.reportDate
-        // Create new history entry
-        const newHistoryEntry = {
-          value: Number.parseFloat(newData.value.toString()),
-          unit: newData.unit,
-          status: newData.status as any,
-          trend: "stable" as any,
-          date: currentDate,
-          referenceRange: newBiomarkerData[biomarkerName].currentValue.referenceRange,
+  const handlePDFDataExtracted = React.useCallback((extractedData: any) => {
+    setPatientInfo(prev => ({ ...prev, ...extractedData.patientInfo }))
+    
+    setBiomarkerData(prev => {
+      const newBiomarkerData = { ...prev }
+      Object.keys(extractedData.biomarkers).forEach((biomarkerName) => {
+        if (newBiomarkerData[biomarkerName]) {
+          const newData = extractedData.biomarkers[biomarkerName]
+          const currentDate = extractedData.patientInfo.reportDate
+          
+          // Create new history entry
+          const newHistoryEntry = {
+            value: Number.parseFloat(newData.value.toString()),
+            unit: newData.unit,
+            status: newData.status,
+            trend: "stable",
+            date: currentDate,
+            referenceRange: newData.referenceRange,
+          }
+
+          // Update biomarker data
+          newBiomarkerData[biomarkerName] = {
+            ...newBiomarkerData[biomarkerName],
+            currentValue: newHistoryEntry,
+            history: [...newBiomarkerData[biomarkerName].history, newHistoryEntry],
+          }
         }
-        // COMPLETELY REPLACE current value with extracted data
-        newBiomarkerData[biomarkerName].currentValue = {
-          ...newBiomarkerData[biomarkerName].currentValue,
-          value: Number.parseFloat(newData.value.toString()),
-          date: currentDate,
-          status: newData.status as any,
-        }
-        // Add to history (keep last 6 entries)
-        newBiomarkerData[biomarkerName].history = [
-          ...newBiomarkerData[biomarkerName].history.slice(-5),
-          newHistoryEntry,
-        ]
-      }
+      })
+      return newBiomarkerData
     })
-    setBiomarkerData(newBiomarkerData)
-    setUploadedBiomarkerData({ ...extractedData, timestamp: Date.now() })
-    setForceUpdate((prev) => prev + 1)
-    calculateSummaryStats()
-    setTimeout(() => {
-      setShowUpload(false)
-    }, 3000)
-  }
+  }, [])
 
   const handleExportReport = () => {
     const reportData = {
@@ -210,9 +216,6 @@ export default function EcoTownHealthDashboard() {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }
-
-  // Type the biomarker groups
-  const biomarkerGroups: BiomarkerGroups = getDynamicBiomarkerGroups(biomarkerData)
 
   // Function to render chart for current group
   const renderBiomarkerChart = (group: string) => {

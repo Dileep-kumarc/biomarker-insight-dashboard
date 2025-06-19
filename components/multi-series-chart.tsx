@@ -77,11 +77,21 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
-  }, [defaultHeight])
+  }, [defaultHeight]) // keep defaultHeight dependency
 
+  // Memoize biomarker names
   useEffect(() => {
-    setSelectedBiomarkers(biomarkers.map((b) => b.name))
-  }, [biomarkers])
+    const biomarkerNames = biomarkers.map((b) => b.name)
+    setSelectedBiomarkers(prev => {
+      // Only update if the names have changed
+      const prevSet = new Set(prev)
+      const newSet = new Set(biomarkerNames)
+      if (prevSet.size !== newSet.size || [...prevSet].some(name => !newSet.has(name))) {
+        return biomarkerNames
+      }
+      return prev
+    })
+  }, [biomarkers]) // Only re-run when biomarkers change
 
   const filterDataByDateRange = (data: DataPoint[], range: string): DataPoint[] => {
     if (range === 'all-time') return data;
@@ -107,36 +117,42 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
   };
 
   // Filter biomarkers data based on date range
-  const filteredBiomarkers = biomarkers.map(biomarker => ({
+  const filteredBiomarkers = React.useMemo(() => biomarkers.map(biomarker => ({
     ...biomarker,
     data: filterDataByDateRange(biomarker.data, dateRange)
-  }));
+  })), [biomarkers, dateRange])
 
   // Improved data combination logic with filtered data
-  const combinedData = filteredBiomarkers[0]?.data ? filteredBiomarkers[0].data.map((_, index) => {
-    const dataPoint: any = {
-      date: filteredBiomarkers[0].data[index].date,
-      formattedDate: new Date(filteredBiomarkers[0].data[index].date).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: isMobile ? "short" : "long",
-        day: "numeric",
-      }),
-    }
-
-    filteredBiomarkers.forEach((biomarker) => {
-      if (biomarker.data[index]) {
-        dataPoint[biomarker.name] = biomarker.data[index].value
-        dataPoint[`${biomarker.name}_status`] = biomarker.data[index].status
+  const combinedData = React.useMemo(() => {
+    if (!filteredBiomarkers[0]?.data) return []
+    
+    return filteredBiomarkers[0].data.map((_, index) => {
+      const dataPoint: any = {
+        date: filteredBiomarkers[0].data[index].date,
+        formattedDate: new Date(filteredBiomarkers[0].data[index].date).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: isMobile ? "short" : "long",
+          day: "numeric",
+        }),
       }
-    })
 
-    return dataPoint
-  }) : []
+      filteredBiomarkers.forEach((biomarker) => {
+        if (biomarker.data[index]) {
+          dataPoint[biomarker.name] = biomarker.data[index].value
+          dataPoint[`${biomarker.name}_status`] = biomarker.data[index].status
+        }
+      })
+
+      return dataPoint
+    })
+  }, [filteredBiomarkers, isMobile])
 
   // Reset zoom when date range changes
   useEffect(() => {
-    handleZoomReset();
-  }, [dateRange]);
+    if (handleZoomReset) {
+      handleZoomReset()
+    }
+  }, [dateRange, handleZoomReset])
 
   const handleBiomarkerToggle = (biomarkerName: string) => {
     setSelectedBiomarkers((prev) => {
