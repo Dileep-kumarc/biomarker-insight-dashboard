@@ -27,11 +27,12 @@ app = FastAPI()
 # CORS setup - Allowing Netlify and Vercel domains, including wildcards for subdomains
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.(vercel|netlify)\.app",
+    allow_origins=["*"],  # ⚠️ Open to all domains
     allow_credentials=True,
     allow_methods=ALL_METHODS,
     allow_headers=["*"],
 )
+
 
 logging.basicConfig(level=logging.INFO)
 
