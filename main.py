@@ -11,23 +11,13 @@ import os
 
 app = FastAPI()
 
-# CORS Setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://fiinaly-working.vercel.app",
-        "https://6853883c0d04268f1d7552a9--biomarker-insight-dashboard.netlify.app",
-        "https://biomarker-insight-dashboard.netlify.app",
-        "https://fixed-working.vercel.app",
-    ],
+    allow_origin_regex=r"https:\/\/.*(vercel|netlify)\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.post("/extract")
-async def extract_data(file: UploadFile = File(...)):
-    return {"filename": file.filename}
 
 
 
