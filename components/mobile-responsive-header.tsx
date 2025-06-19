@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,10 @@ export function MobileResponsiveHeader({
   summaryStats,
 }: MobileResponsiveHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  const handleDateRangeChange = useCallback((value: string) => {
+    onDateRangeChange(value)
+  }, [onDateRangeChange])
 
   return (
     <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100/50 sticky top-0 z-50">
@@ -89,10 +93,13 @@ export function MobileResponsiveHeader({
                   </div>
 
                   <div className="space-y-3">
-                    <Select value={dateRange} onValueChange={onDateRangeChange}>
+                    <Select 
+                      defaultValue={dateRange} 
+                      onValueChange={handleDateRangeChange}
+                    >
                       <SelectTrigger className="w-full bg-white">
                         <Calendar className="h-4 w-4 mr-2 text-blue-500" />
-                        <SelectValue />
+                        <SelectValue placeholder="Select time range" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all-time">All Time</SelectItem>

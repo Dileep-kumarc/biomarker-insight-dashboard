@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import {
   LineChart,
   Line,
@@ -62,6 +62,14 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
   const minHeight = Math.max(200, defaultHeight * 0.5) // Minimum 200px or 50% of default
   const maxHeight = defaultHeight * 2 // Maximum 200% of default
 
+  // Define handleZoomReset as a memoized callback
+  const handleZoomReset = useCallback(() => {
+    setZoomDomain({})
+    setZoomState({})
+    setBrushDomain([0, 100])
+    setChartHeight(defaultHeight)
+  }, [defaultHeight])
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -93,7 +101,7 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
     })
   }, [biomarkers]) // Only re-run when biomarkers change
 
-  const filterDataByDateRange = (data: DataPoint[], range: string): DataPoint[] => {
+  const filterDataByDateRange = useCallback((data: DataPoint[], range: string): DataPoint[] => {
     if (range === 'all-time') return data;
 
     const now = new Date();
@@ -114,16 +122,16 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
     }
 
     return data.filter(point => new Date(point.date) >= startDate);
-  };
+  }, [])
 
   // Filter biomarkers data based on date range
-  const filteredBiomarkers = React.useMemo(() => biomarkers.map(biomarker => ({
+  const filteredBiomarkers = useMemo(() => biomarkers.map(biomarker => ({
     ...biomarker,
     data: filterDataByDateRange(biomarker.data, dateRange)
-  })), [biomarkers, dateRange])
+  })), [biomarkers, dateRange, filterDataByDateRange])
 
-  // Improved data combination logic with filtered data
-  const combinedData = React.useMemo(() => {
+  // Add useMemo for combinedData
+  const combinedData = useMemo(() => {
     if (!filteredBiomarkers[0]?.data) return []
     
     return filteredBiomarkers[0].data.map((_, index) => {
@@ -149,12 +157,10 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
 
   // Reset zoom when date range changes
   useEffect(() => {
-    if (handleZoomReset) {
-      handleZoomReset()
-    }
+    handleZoomReset()
   }, [dateRange, handleZoomReset])
 
-  const handleBiomarkerToggle = (biomarkerName: string) => {
+  const handleBiomarkerToggle = useCallback((biomarkerName: string) => {
     setSelectedBiomarkers((prev) => {
       if (prev.includes(biomarkerName)) {
         return prev.filter((name) => name !== biomarkerName)
@@ -162,28 +168,37 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
         return [...prev, biomarkerName]
       }
     })
-  }
-
-  const handleZoomReset = () => {
-    setZoomDomain({})
-    setZoomState({})
-    setBrushDomain([0, combinedData.length - 1])
-    setChartHeight(defaultHeight) // Reset to default height
-  }
+  }, [])
 
   // Calculate data domain for Y axis using filtered data
-  const yDomain = filteredBiomarkers.reduce((domain, biomarker) => {
-    if (selectedBiomarkers.includes(biomarker.name)) {
-      const values = biomarker.data.map(d => d.value)
-      const min = Math.min(...values, biomarker.referenceRange.min)
-      const max = Math.max(...values, biomarker.referenceRange.max)
-      return [
-        Math.min(domain[0], min * 0.9), // Add 10% padding
-        Math.max(domain[1], max * 1.1)
-      ]
+  const yDomain = useMemo(() => {
+    const allValues = filteredBiomarkers.reduce((acc, biomarker) => {
+      if (!selectedBiomarkers.includes(biomarker.name)) {
+        return acc;
+      }
+      
+      const dataValues = biomarker.data.map(d => d.value);
+      if (biomarker.referenceRange) {
+        const rangeValues = [biomarker.referenceRange.min, biomarker.referenceRange.max];
+        if (biomarker.referenceRange.optimal) {
+          rangeValues.push(biomarker.referenceRange.optimal);
+        }
+        return acc.concat(dataValues, rangeValues);
+      }
+      
+      return acc.concat(dataValues);
+    }, [] as number[]);
+
+    if (allValues.length === 0) {
+      return [0, 100]; // Default domain if no data
     }
-    return domain
-  }, [Infinity, -Infinity])
+
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
+    const padding = (max - min) * 0.1;
+
+    return [min - padding, max + padding];
+  }, [filteredBiomarkers, selectedBiomarkers]);
 
   const handleZoomIn = () => {
     if (combinedData.length === 0) return;
@@ -338,21 +353,25 @@ export function MultiSeriesChart({ title, biomarkers, height = 400, dateRange = 
                       name={`${biomarker.name} (${biomarker.unit})`}
                       isAnimationActive={false}
                     />,
-                    <ReferenceLine
-                      key={`${biomarker.name}-min`}
-                      y={biomarker.referenceRange.min}
-                      stroke={biomarker.color}
-                      strokeDasharray="3 3"
-                      opacity={0.5}
-                    />,
-                    <ReferenceLine
-                      key={`${biomarker.name}-max`}
-                      y={biomarker.referenceRange.max}
-                      stroke={biomarker.color}
-                      strokeDasharray="3 3"
-                      opacity={0.5}
-                    />,
-                    biomarker.referenceRange.optimal && (
+                    biomarker.referenceRange && (
+                      <ReferenceLine
+                        key={`${biomarker.name}-min`}
+                        y={biomarker.referenceRange.min}
+                        stroke={biomarker.color}
+                        strokeDasharray="3 3"
+                        opacity={0.5}
+                      />
+                    ),
+                    biomarker.referenceRange && (
+                      <ReferenceLine
+                        key={`${biomarker.name}-max`}
+                        y={biomarker.referenceRange.max}
+                        stroke={biomarker.color}
+                        strokeDasharray="3 3"
+                        opacity={0.5}
+                      />
+                    ),
+                    biomarker.referenceRange?.optimal && (
                       <ReferenceLine
                         key={`${biomarker.name}-optimal`}
                         y={biomarker.referenceRange.optimal}

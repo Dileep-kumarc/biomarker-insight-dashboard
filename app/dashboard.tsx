@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from "framer-motion";
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -42,38 +42,43 @@ interface BiomarkerGroups {
 // Create a specific motion heading component
 // Remove unused motion component declaration
 
+type BiomarkerGroup = "Lipid Profile" | "Metabolic Panel" | "Vitamins"
+
 export default function EcoTownHealthDashboard() {
   const [selectedBiomarker, setSelectedBiomarker] = useState("Total Cholesterol")
   const [dateRange, setDateRange] = useState("all-time")
   const [showUpload, setShowUpload] = useState(false)
-  const [selectedGroup, setSelectedGroup] = useState("Lipid Profile")
+  const [selectedGroup, setSelectedGroup] = useState<BiomarkerGroup>("Lipid Profile")
   const [uploadedBiomarkerData, setUploadedBiomarkerData] = useState<any>(null)
   const [forceUpdate, setForceUpdate] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-
-  // NEW: Use state for patient info and biomarker data with correct types
   const [patientInfo, setPatientInfo] = useState<PatientInfo>(initialPatientInfo)
   const [biomarkerData, setBiomarkerData] = useState<Record<string, BiomarkerData>>(initialBiomarkerData)
 
-  const biomarkerKeys = Object.keys(biomarkerData)
+  // Memoize derived values
+  const biomarkerKeys = useMemo(() => Object.keys(biomarkerData), [biomarkerData])
+  const biomarkerGroups = useMemo(() => getDynamicBiomarkerGroups(biomarkerData), [biomarkerData])
 
-  // Calculate dynamic summary statistics
-  const [summaryStats, setSummaryStats] = useState({
-    total: 0,
-    normal: 0,
-    outOfRange: 0,
-    improving: 0,
-  })
+  // Memoize handlers
+  const handleDateRangeChange = useCallback((value: string) => {
+    setDateRange(value)
+  }, [])
 
-  // Memoize biomarker groups
-  const biomarkerGroups = React.useMemo(() => 
-    getDynamicBiomarkerGroups(biomarkerData),
-    [biomarkerData]
-  )
+  const handleUploadClick = useCallback(() => {
+    setShowUpload(prev => !prev)
+  }, [])
 
-  // Memoize summary stats calculation
-  const calculateSummaryStats = React.useCallback(() => {
+  const handleExportClick = useCallback(() => {
+    // Export functionality implementation
+  }, [])
+
+  const handleGroupChange = useCallback((value: string) => {
+    setSelectedGroup(value as BiomarkerGroup)
+  }, [])
+
+  // Calculate summary stats
+  const summaryStats = useMemo(() => {
     const total = biomarkerKeys.length
     const normal = biomarkerKeys.filter(
       (key) => biomarkerData[key].currentValue.status === "Normal"
@@ -90,14 +95,13 @@ export default function EcoTownHealthDashboard() {
       const latest = history[history.length - 1].value
       const previous = history[history.length - 2].value
 
-      // Improvement logic based on biomarker type
       if (
         key === "HDL Cholesterol" ||
         key === "Vitamin D" ||
         key === "Hemoglobin" ||
         key === "Vitamin B12"
       ) {
-        return latest > previous // Higher is better
+        return latest > previous
       } else if (
         key === "Total Cholesterol" ||
         key === "LDL Cholesterol" ||
@@ -105,18 +109,13 @@ export default function EcoTownHealthDashboard() {
         key === "Creatinine" ||
         key === "HbA1c"
       ) {
-        return latest < previous // Lower is better
+        return latest < previous
       }
       return false
     }).length
 
     return { total, normal, outOfRange, improving }
   }, [biomarkerData, biomarkerKeys])
-
-  // Update summary stats when biomarker data changes
-  useEffect(() => {
-    setSummaryStats(calculateSummaryStats())
-  }, [calculateSummaryStats])
 
   // Memoize handler functions
   const handleUpload = React.useCallback(async (file: File) => {
@@ -217,8 +216,8 @@ export default function EcoTownHealthDashboard() {
     URL.revokeObjectURL(url)
   }
 
-  // Function to render chart for current group
-  const renderBiomarkerChart = (group: string) => {
+  // Render functions
+  const renderBiomarkerChart = useCallback((group: BiomarkerGroup) => {
     const groupData = biomarkerGroups[group]
     if (!groupData) return null
 
@@ -235,10 +234,11 @@ export default function EcoTownHealthDashboard() {
           biomarkers={groupData.biomarkers}
           height={400}
           dateRange={dateRange}
+          onDateRangeChange={handleDateRangeChange}
         />
       </motion.div>
     )
-  }
+  }, [biomarkerGroups, dateRange, handleDateRangeChange])
 
   const [isClient, setIsClient] = useState(false)
   useEffect(() => {
@@ -246,18 +246,18 @@ export default function EcoTownHealthDashboard() {
   }, [])
 
   return (
-    <div className="min-h-screen font-sans">
+    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Mobile Responsive Header */}
       <MobileResponsiveHeader
         patientInfo={patientInfo}
         dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        onUploadClick={() => setShowUpload(!showUpload)}
-        onExportClick={handleExportReport}
+        onDateRangeChange={handleDateRangeChange}
+        onUploadClick={handleUploadClick}
+        onExportClick={handleExportClick}
         summaryStats={summaryStats}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Upload Section */}
         {isClient && showUpload && (
           <motion.div 
@@ -319,7 +319,7 @@ export default function EcoTownHealthDashboard() {
                   Biomarker Overview
                 </motion.div>
               </h2>
-              <Tabs value={selectedGroup} onValueChange={setSelectedGroup} className="w-full">
+              <Tabs value={selectedGroup} onValueChange={handleGroupChange} className="w-full">
                 <TabsList className="w-full justify-start mb-4 bg-gray-100/50 p-1 overflow-x-auto flex-nowrap">
                   {Object.keys(biomarkerGroups).map((group) => (
                     <TabsTrigger
@@ -436,6 +436,6 @@ export default function EcoTownHealthDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
