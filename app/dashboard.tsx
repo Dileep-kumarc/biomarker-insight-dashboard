@@ -329,11 +329,11 @@ export default function EcoTownHealthDashboard() {
                   ))}
                 </TabsList>
                 {Object.entries(biomarkerGroups).map(([group, data]) => (
-                  <TabsContent key={group} value={group} className="mt-0">
+                  <TabsContent key={`tab-${group}`} value={group} className="mt-0">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {data.biomarkers.map((biomarker) => (
                         <motion.div
-                          key={biomarker.name}
+                          key={`biomarker-${biomarker.name}`}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2 }}

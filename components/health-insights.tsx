@@ -158,7 +158,7 @@ export function HealthInsights({ patientInfo, biomarkerData }: HealthInsightsPro
             <div className="flex flex-wrap gap-2">
               {getRiskFactors().map((risk, index) => (
                 <motion.div
-                  key={index}
+                  key={`risk-${risk.replace(/\s+/g, '-').toLowerCase()}-${index}`}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 + index * 0.1 }}
@@ -192,23 +192,24 @@ export function HealthInsights({ patientInfo, biomarkerData }: HealthInsightsPro
             {insights.map((insight, index) => {
               const IconComponent = insight.icon
               return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + index * 0.1 }}
-                >
-                  <Alert className={insight.color}>
-                    <IconComponent className="h-4 w-4" />
-                    <AlertDescription>
-                      <div className="font-medium mb-1">{insight.title}</div>
-                      <div className="text-sm">{insight.message}</div>
-                      <Badge variant="outline" className="mt-2 text-xs">
-                        Priority: {insight.priority}
-                      </Badge>
-                    </AlertDescription>
-                  </Alert>
-                </motion.div>
+                <div key={`insight-${insight.title}-${index}`}>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
+                  >
+                    <Alert className={insight.color}>
+                      <IconComponent className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="font-medium mb-1">{insight.title}</div>
+                        <div className="text-sm">{insight.message}</div>
+                        <Badge variant="outline" className="mt-2 text-xs">
+                          Priority: {insight.priority}
+                        </Badge>
+                      </AlertDescription>
+                    </Alert>
+                  </motion.div>
+                </div>
               )
             })}
           </CardContent>
