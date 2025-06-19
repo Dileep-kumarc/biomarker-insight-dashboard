@@ -21,6 +21,7 @@ origins = [
     "https://biomarker-insight-dashboard.netlify.app",
     "http://127.0.0.1:3000",
     "http://127.0.0.1",
+    "https://fixed-working.vercel.app",
 ]
 
 app.add_middleware(
