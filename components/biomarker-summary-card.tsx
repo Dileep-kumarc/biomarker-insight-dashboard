@@ -20,32 +20,15 @@ export function BiomarkerSummaryCard({ biomarker, onClick }: BiomarkerSummaryCar
   const { value, unit, status, trend } = currentValue
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Normal":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/20"
-      case "Low":
-        return "bg-blue-50 text-blue-700 border-blue-200 ring-blue-500/20"
-      case "High":
-        return "bg-amber-50 text-amber-700 border-amber-200 ring-amber-500/20"
-      case "Critical":
-        return "bg-red-50 text-red-700 border-red-200 ring-red-500/20"
+    switch (status.toLowerCase()) {
+      case 'high':
+        return 'text-red-600'
+      case 'low':
+        return 'text-yellow-600'
+      case 'normal':
+        return 'text-green-600'
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200 ring-gray-500/20"
-    }
-  }
-
-  const getStatusBorder = (status: string) => {
-    switch (status) {
-      case "Normal":
-        return "border-l-emerald-500"
-      case "Low":
-        return "border-l-blue-500"
-      case "High":
-        return "border-l-amber-500"
-      case "Critical":
-        return "border-l-red-500"
-      default:
-        return "border-l-gray-500"
+        return 'text-gray-600'
     }
   }
 

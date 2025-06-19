@@ -3,8 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckCircle, XCircle, Pill, Activity } from "lucide-react"
+import type { BiomarkerData } from "@/types/biomarker"
 
-export function ActionPlan() {
+interface ActionPlanProps {
+  patientInfo: {
+    name: string
+    age: number
+    gender: string
+    id: string
+    lastUpdated: string
+  }
+  biomarkerData: {
+    [key: string]: BiomarkerData
+  }
+}
+
+export function ActionPlan({ }: ActionPlanProps) { // Temporarily removing unused props
   const foodRecommendations = {
     enjoy: [
       { name: "Salmon & Fatty Fish", reason: "Rich in omega-3 for HDL improvement" },
@@ -156,7 +170,7 @@ export function ActionPlan() {
               >
                 <p className="text-sm text-yellow-800">
                   <strong>Important:</strong> Always consult your healthcare provider before starting any new supplements,
-                  especially if you're taking medications or have existing health conditions.
+                  especially if you&apos;re taking medications or have existing health conditions.
                 </p>
               </motion.div>
             </TabsContent>

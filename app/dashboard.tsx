@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { motion } from "framer-motion";
+import { motion } from "framer-motion"
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MobileResponsiveHeader } from '@/components/mobile-responsive-header'
@@ -13,7 +13,11 @@ import { ClinicalInterpretationGuide } from '@/components/clinical-interpretatio
 import { UploadReport } from '@/components/upload-report'
 import { getDynamicBiomarkerGroups } from '@/utils/biomarker-utils'
 import { realBiomarkerData as initialBiomarkerData, realPatientInfo as initialPatientInfo } from '@/data/real-patient-data'
+import { BiomarkerValue } from '@/types/biomarker'
 import type { BiomarkerData, PatientInfo } from '@/types/biomarker'
+
+// Removing unused type
+// interface BiomarkerGroupData {}
 
 interface ExtractedData {
   patientInfo: PatientInfo;
@@ -21,48 +25,19 @@ interface ExtractedData {
   timestamp?: string;
 }
 
-// Add type for biomarker group data
-interface BiomarkerGroupData {
-  title: string
-  biomarkers: Array<{
-    name: string
-    data: Array<{
-      date: string
-      value: number
-      status: string
-    }>
-    color: string
-    referenceRange: {
-      min: number
-      max: number
-      optimal?: number
-    }
-    unit: string
-  }>
-}
-
-interface BiomarkerGroups {
-  [key: string]: BiomarkerGroupData
-}
-
-// Create a specific motion heading component
-// Remove unused motion component declaration
-
 type BiomarkerGroup = "Lipid Profile" | "Metabolic Panel" | "Vitamins"
 
 export default function EcoTownHealthDashboard() {
   // State declarations
-  const [selectedBiomarker, setSelectedBiomarker] = useState("Total Cholesterol")
-  const [dateRange, setDateRange] = useState("all-time")
+  const [isClient, setIsClient] = useState(false)
+  const [biomarkerData, setBiomarkerData] = useState<Record<string, BiomarkerData>>(initialBiomarkerData)
+  const [patientInfo, setPatientInfo] = useState<PatientInfo>(initialPatientInfo)
+  const [dateRange, setDateRange] = useState<[Date, Date]>([new Date('2023-01-01'), new Date()])
   const [showUpload, setShowUpload] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<BiomarkerGroup>("Lipid Profile")
   const [uploadedBiomarkerData, setUploadedBiomarkerData] = useState<ExtractedData | null>(null)
-  const [forceUpdate, setForceUpdate] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const [patientInfo, setPatientInfo] = useState<PatientInfo>(initialPatientInfo)
-  const [biomarkerData, setBiomarkerData] = useState<Record<string, BiomarkerData>>(initialBiomarkerData)
-  const [isClient, setIsClient] = useState(false)
 
   // Memoized values
   const biomarkerKeys = useMemo(() => Object.keys(biomarkerData), [biomarkerData])
@@ -108,22 +83,108 @@ export default function EcoTownHealthDashboard() {
     return { total, normal, outOfRange, improving }
   }, [biomarkerData, biomarkerKeys])
 
+  // Move handleExportReport before handleExportClick
+  const handleExportReport = useCallback(() => {
+    const reportData = {
+      patient: patientInfo,
+      biomarkers: biomarkerData,
+      summary: summaryStats,
+      reportMetadata: {
+        sourceReports: ["MR. MANJUNATH SWAMY Health Report", "Date: 16-06-2025"],
+        generatedAt: new Date().toISOString(),
+        clinicalSummary: {
+          riskFactors: biomarkerKeys.filter(
+            (key) =>
+              biomarkerData[key].currentValue.status === "High" ||
+              biomarkerData[key].currentValue.status === "Low",
+          ),
+          improvements: biomarkerKeys.filter((key) => {
+            const history = biomarkerData[key].history
+            return history.length >= 2 && history[history.length - 1].value !== history[history.length - 2].value
+          }),
+        },
+      },
+    }
+
+    const dataStr = JSON.stringify(reportData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: "application/json" })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `ecotown-health-${patientInfo.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json`
+    document.body.appendChild(link) // Required for Firefox
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, [patientInfo, biomarkerData, summaryStats, biomarkerKeys])
+
+  const handleExportClick = useCallback(() => {
+    handleExportReport()
+  }, [handleExportReport])
+
+  const handleGroupChange = useCallback((value: string) => {
+    setSelectedGroup(value as BiomarkerGroup)
+  }, [])
+
   // Simple handlers
   const handleDateRangeChange = useCallback((value: string) => {
-    setDateRange(value)
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (value) {
+      case 'all-time':
+        startDate = new Date('2023-01-01');
+        endDate = new Date();
+        break;
+      case 'last-3-months':
+        startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 3);
+        endDate = new Date();
+        break;
+      case 'last-6-months':
+        startDate = new Date();
+        startDate.setMonth(startDate.getMonth() - 6);
+        endDate = new Date();
+        break;
+      case 'last-year':
+        startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        endDate = new Date();
+        break;
+      default:
+        console.error('Invalid date range:', value);
+        return;
+    }
+    
+    setDateRange([startDate, endDate]);
   }, [])
 
   const handleUploadClick = useCallback(() => {
     setShowUpload(prev => !prev)
   }, [])
 
-  const handleExportClick = useCallback(() => {
-    handleExportReport()
-  }, [])
+  // Memoized value for string date range
+  const dateRangeString = useMemo(() => {
+    const [start] = dateRange;
+    const now = new Date();
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(now.getMonth() - 3);
+    const sixMonthsAgo = new Date(now);
+    sixMonthsAgo.setMonth(now.getMonth() - 6);
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
 
-  const handleGroupChange = useCallback((value: string) => {
-    setSelectedGroup(value as BiomarkerGroup)
-  }, [])
+    if (start <= new Date('2023-01-01')) {
+      return 'all-time';
+    } else if (start >= threeMonthsAgo) {
+      return 'last-3-months';
+    } else if (start >= sixMonthsAgo) {
+      return 'last-6-months';
+    } else if (start >= oneYearAgo) {
+      return 'last-year';
+    }
+    return 'all-time';
+  }, [dateRange]);
 
   // Complex handlers with dependencies
   const handlePDFDataExtracted = useCallback((extractedData: ExtractedData) => {
@@ -141,13 +202,19 @@ export default function EcoTownHealthDashboard() {
           const newData = extractedData.biomarkers[biomarkerName];
           const currentDate = extractedData.patientInfo.reportDate;
           
-          const newHistoryEntry = {
+          // Skip if required data is missing
+          if (!newData?.value || !newData?.unit || !newData?.status || !currentDate) {
+            console.warn(`Missing required data for biomarker: ${biomarkerName}`);
+            return; // Skip this iteration in the forEach
+          }
+
+          const newHistoryEntry: BiomarkerValue = {
             value: Number.parseFloat(newData.value.toString()),
             unit: newData.unit,
             status: newData.status,
             trend: "stable",
             date: currentDate,
-            referenceRange: newData.referenceRange,
+            referenceRange: newData.referenceRange || { min: 0, max: 0 },
           };
 
           newBiomarkerData[biomarkerName] = {
@@ -249,40 +316,6 @@ export default function EcoTownHealthDashboard() {
     }
   }, [handlePDFDataExtracted]);
 
-  const handleExportReport = () => {
-    const reportData = {
-      patient: patientInfo,
-      biomarkers: biomarkerData,
-      summary: summaryStats,
-      reportMetadata: {
-        sourceReports: ["MR. MANJUNATH SWAMY Health Report", "Date: 16-06-2025"],
-        generatedAt: new Date().toISOString(),
-        clinicalSummary: {
-          riskFactors: biomarkerKeys.filter(
-            (key) =>
-              biomarkerData[key].currentValue.status === "High" ||
-              biomarkerData[key].currentValue.status === "Low",
-          ),
-          improvements: biomarkerKeys.filter((key) => {
-            const history = biomarkerData[key].history
-            return history.length >= 2 && history[history.length - 1].value !== history[history.length - 2].value
-          }),
-        },
-      },
-    }
-
-    const dataStr = JSON.stringify(reportData, null, 2)
-    const dataBlob = new Blob([dataStr], { type: "application/json" })
-    const url = URL.createObjectURL(dataBlob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `ecotown-health-${patientInfo.name.replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.json`
-    document.body.appendChild(link) // Required for Firefox
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-  }
-
   // Effects
   useEffect(() => {
     setIsClient(true)
@@ -306,18 +339,17 @@ export default function EcoTownHealthDashboard() {
           biomarkers={groupData.biomarkers}
           height={400}
           dateRange={dateRange}
-          onDateRangeChange={handleDateRangeChange}
         />
       </motion.div>
     )
-  }, [biomarkerGroups, dateRange, handleDateRangeChange])
+  }, [biomarkerGroups, dateRange])
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Mobile Responsive Header */}
       <MobileResponsiveHeader
         patientInfo={patientInfo}
-        dateRange={dateRange}
+        dateRange={dateRangeString}
         onDateRangeChange={handleDateRangeChange}
         onUploadClick={handleUploadClick}
         onExportClick={handleExportClick}
@@ -411,7 +443,7 @@ export default function EcoTownHealthDashboard() {
                         >
                           <BiomarkerSummaryCard
                             biomarker={biomarkerData[biomarker.name]}
-                            onClick={() => setSelectedBiomarker(biomarker.name)}
+                            onClick={() => setSelectedGroup(biomarker.name as BiomarkerGroup)}
                           />
                         </motion.div>
                       ))}
@@ -438,27 +470,43 @@ export default function EcoTownHealthDashboard() {
                   Trend Analysis
                 </motion.div>
               </h2>
+              {/* Selected Group Chart */}
               {renderBiomarkerChart(selectedGroup)}
             </motion.div>
 
-            {/* Clinical Interpretation Guide - now centered below the chart */}
-            <motion.div
-              className="glass-card rounded-xl border border-gray-100 shadow-xl p-3 sm:p-4"
+            {/* Health Insights and Action Plan */}
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.25 }}
+              transition={{ delay: 0.3 }}
             >
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 mb-4">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="inline-block"
-                >
-                  Clinical Interpretation Guide
-                </motion.div>
-              </h2>
-              <ClinicalInterpretationGuide />
+              <div>
+                <HealthInsights 
+                  patientInfo={patientInfo}
+                  biomarkerData={biomarkerData} 
+                />
+              </div>
+              <div>
+                <ActionPlan 
+                  patientInfo={patientInfo}
+                  biomarkerData={biomarkerData} 
+                />
+              </div>
+            </motion.div>
+
+            {/* Clinical Interpretation Guide */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div>
+                <ClinicalInterpretationGuide 
+                  patientInfo={patientInfo}
+                  biomarkerData={biomarkerData} 
+                />
+              </div>
             </motion.div>
           </div>
 
@@ -480,7 +528,7 @@ export default function EcoTownHealthDashboard() {
                   Health Insights
                 </motion.div>
               </h2>
-              <HealthInsights patientInfo={patientInfo} biomarkerData={biomarkerData} />
+              <HealthInsights biomarkerData={biomarkerData} patientInfo={patientInfo} />
             </motion.div>
 
             <motion.div 
@@ -499,7 +547,7 @@ export default function EcoTownHealthDashboard() {
                   Personalized Action Plan
                 </motion.div>
               </h2>
-              <ActionPlan />
+              <ActionPlan biomarkerData={biomarkerData} patientInfo={patientInfo} />
             </motion.div>
           </div>
         </div>

@@ -8,21 +8,50 @@ import React from "react"
 import dynamic from "next/dynamic"
 
 interface PDFProcessorProps {
-  onDataExtracted: (extractedData: any) => void
+  onDataExtracted: (extractedData: ExtractedData) => void
   uploadedFile?: File
+}
+
+interface ExtractedData {
+  patientInfo: {
+    name?: string;
+    age?: number;
+    dob?: string;
+    sex?: string;
+    reportDate?: string;
+  };
+  biomarkers: Record<string, {
+    value: number;
+    unit: string;
+    status: string;
+    referenceRange?: { min: number; max: number };
+  }>;
 }
 
 const PdfExtractClient = dynamic(() => import("./pdf-extract-client"), { ssr: false })
 
-export function PDFProcessor({ onDataExtracted, uploadedFile }: PDFProcessorProps) {
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [extractedData, setExtractedData] = useState<any>(null)
-  const [ocrText, setOcrText] = useState<string>("")
-
-  const handleDataExtracted = async (data: any) => {
-    setExtractedData(data)
-    setIsProcessing(false)
-    onDataExtracted(data)
+export function PDFProcessor({ onDataExtracted, uploadedFile }: PDFProcessorProps) {  const [isProcessing, setIsProcessing] = useState(false)
+  const handleTextExtracted = async (text: string) => {
+    if (text.startsWith("[ERROR]")) {
+      setIsProcessing(false);
+      // Handle error case
+      return;
+    }
+    
+    try {
+      // Here you would parse the text into ExtractedData format
+      // This is a placeholder - implement actual parsing logic
+      const parsedData: ExtractedData = {
+        patientInfo: {},
+        biomarkers: {}
+      };
+      
+      setIsProcessing(false);
+      onDataExtracted(parsedData);
+    } catch (error) {
+      setIsProcessing(false);
+      console.error("Failed to parse PDF text:", error);
+    }
   }
 
   if (!uploadedFile) {
@@ -53,7 +82,7 @@ export function PDFProcessor({ onDataExtracted, uploadedFile }: PDFProcessorProp
             </div>
           )}
 
-          <PdfExtractClient onExtracted={handleDataExtracted} file={uploadedFile} />
+          <PdfExtractClient onExtracted={handleTextExtracted} file={uploadedFile} />
         </div>
       </CardContent>
     </Card>

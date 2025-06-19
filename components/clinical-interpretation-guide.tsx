@@ -1,9 +1,24 @@
+import React from 'react'
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Info, CheckCircle, XCircle } from "lucide-react"
+import { Info, CheckCircle } from "lucide-react" // Removing unused AlertTriangle import
+import type { BiomarkerData } from "@/types/biomarker"
 
-export function ClinicalInterpretationGuide() {
+interface ClinicalInterpretationGuideProps {
+  patientInfo: {
+    name: string
+    age: number
+    gender: string
+    id: string
+    lastUpdated: string
+  }
+  biomarkerData: {
+    [key: string]: BiomarkerData
+  }
+}
+
+export function ClinicalInterpretationGuide({ }: ClinicalInterpretationGuideProps) { // Temporarily removing unused props
   const interpretations = [
     {
       biomarker: "HDL Cholesterol",

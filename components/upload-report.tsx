@@ -2,7 +2,7 @@
 
 import React, { useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Upload, CheckCircle, AlertTriangle, Activity } from "lucide-react"
+import { Upload, AlertTriangle, Activity } from "lucide-react"
 import { useDropzone } from "react-dropzone"
 
 interface UploadReportProps {

@@ -1,8 +1,8 @@
 "use client";
 import { useEffect } from "react";
-// @ts-ignore
+// @ts-expect-error - pdfjs-dist types are not properly resolved
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
-// @ts-ignore
+// @ts-expect-error - pdfjs-dist types are not properly resolved
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 export default function PdfExtractClient({ file, onExtracted }: { file: File, onExtracted: (text: string) => void }) {
@@ -24,7 +24,7 @@ export default function PdfExtractClient({ file, onExtracted }: { file: File, on
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          const pageText = content.items.map((item: any) => item.str).join(" ");
+          const pageText = content.items.map((item: { str: string }) => item.str).join(" ");
           fullText += pageText + "\n";
         }
         if (!didFinish) {

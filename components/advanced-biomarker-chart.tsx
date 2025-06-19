@@ -4,6 +4,9 @@ import { XAxis, YAxis, CartesianGrid, ReferenceLine, ResponsiveContainer, Area, 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import type { BiomarkerData } from "../types/biomarker"
 
+// Removing unused type
+// type ChartDataPoint = any;
+
 interface AdvancedBiomarkerChartProps {
   biomarker: BiomarkerData
 }
@@ -109,7 +112,7 @@ export function AdvancedBiomarkerChart({ biomarker }: AdvancedBiomarkerChartProp
                 const point = payload?.[0]?.payload
                 return point?.formattedDate || value
               }}
-              formatter={(value, name, props: any) => {
+              formatter={(value, name, props) => {
                 const status = props?.payload?.status
                 return [
                   `${value} ${unit}`,

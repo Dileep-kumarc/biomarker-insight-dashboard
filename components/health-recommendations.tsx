@@ -27,32 +27,6 @@ const recommendations = [
 ]
 
 export function HealthRecommendations() {
-  const getAlertVariant = (type: string) => {
-    switch (type) {
-      case "warning":
-        return "destructive"
-      case "info":
-        return "default"
-      case "success":
-        return "default"
-      default:
-        return "default"
-    }
-  }
-
-  const getAlertColor = (type: string) => {
-    switch (type) {
-      case "warning":
-        return "border-red-200 bg-red-50"
-      case "info":
-        return "border-blue-200 bg-blue-50"
-      case "success":
-        return "border-green-200 bg-green-50"
-      default:
-        return ""
-    }
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -62,7 +36,7 @@ export function HealthRecommendations() {
         {recommendations.map((rec, index) => {
           const IconComponent = rec.icon
           return (
-            <Alert key={index} className={getAlertColor(rec.type)}>
+            <Alert key={index}>
               <IconComponent className="h-4 w-4" />
               <AlertDescription>
                 <div className="font-medium mb-1">{rec.title}</div>

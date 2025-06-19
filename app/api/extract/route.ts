@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
             'Content-Type': 'application/json'
           }
         });
-      } catch (parseError) {
+      } catch {
         console.error('Failed to parse Railway response:', responseText);
         return NextResponse.json(
           {
@@ -82,12 +82,12 @@ export async function POST(req: NextRequest) {
         }
       );
     }
-  } catch (error) {
-    console.error('Upload handler error:', error);
+  } catch (_error) {
+    console.error('Upload handler error:', _error);
     return NextResponse.json(
       {
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: _error instanceof Error ? _error.message : 'Unknown error'
       },
       { 
         status: 500,
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function OPTIONS(req: NextRequest) {
+export async function OPTIONS() {
   return new Response(null, {
     status: 204,
     headers: {
