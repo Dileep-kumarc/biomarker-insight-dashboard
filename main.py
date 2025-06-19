@@ -24,12 +24,18 @@ except ImportError:
 # --- FastAPI App Initialization ---
 app = FastAPI()
 
-# CORS setup - Allowing Netlify and Vercel domains, including wildcards for subdomains
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ Open to all domains
+    allow_origins=[
+        "https://fiinaly-working.vercel.app",
+        "https://6853883c0d04268f1d7552a9--biomarker-insight-dashboard.netlify.app",
+        "https://biomarker-insight-dashboard.netlify.app",
+        "https://fixed-working.vercel.app",
+        # Add any other deployed or preview domains here
+    ],
     allow_credentials=True,
-    allow_methods=ALL_METHODS,
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
