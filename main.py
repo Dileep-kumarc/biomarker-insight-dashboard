@@ -22,6 +22,7 @@ origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1",
     "https://DK-workings.vercel.app",
+    "https://extracction2-vtk3.vercel.app",
 ]
 
 app.add_middleware(
