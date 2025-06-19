@@ -77,7 +77,11 @@ export function MobileResponsiveHeader({
                 <Menu className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 bg-white/95 backdrop-blur-xl">
+            <SheetContent 
+              side="right" 
+              className="w-80 bg-white/95 backdrop-blur-xl"
+              title="Navigation Menu"
+            >
               {isMenuOpen && (
                 <motion.div 
                   key="mobile-menu"

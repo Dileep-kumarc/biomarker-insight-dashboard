@@ -15,6 +15,12 @@ import { getDynamicBiomarkerGroups } from '@/utils/biomarker-utils'
 import { realBiomarkerData as initialBiomarkerData, realPatientInfo as initialPatientInfo } from '@/data/real-patient-data'
 import type { BiomarkerData, PatientInfo } from '@/types/biomarker'
 
+interface ExtractedData {
+  patientInfo: PatientInfo;
+  biomarkers: Record<string, BiomarkerData>;
+  timestamp?: string;
+}
+
 // Add type for biomarker group data
 interface BiomarkerGroupData {
   title: string
@@ -45,37 +51,22 @@ interface BiomarkerGroups {
 type BiomarkerGroup = "Lipid Profile" | "Metabolic Panel" | "Vitamins"
 
 export default function EcoTownHealthDashboard() {
+  // State declarations
   const [selectedBiomarker, setSelectedBiomarker] = useState("Total Cholesterol")
   const [dateRange, setDateRange] = useState("all-time")
   const [showUpload, setShowUpload] = useState(false)
   const [selectedGroup, setSelectedGroup] = useState<BiomarkerGroup>("Lipid Profile")
-  const [uploadedBiomarkerData, setUploadedBiomarkerData] = useState<any>(null)
+  const [uploadedBiomarkerData, setUploadedBiomarkerData] = useState<ExtractedData | null>(null)
   const [forceUpdate, setForceUpdate] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [patientInfo, setPatientInfo] = useState<PatientInfo>(initialPatientInfo)
   const [biomarkerData, setBiomarkerData] = useState<Record<string, BiomarkerData>>(initialBiomarkerData)
+  const [isClient, setIsClient] = useState(false)
 
-  // Memoize derived values
+  // Memoized values
   const biomarkerKeys = useMemo(() => Object.keys(biomarkerData), [biomarkerData])
   const biomarkerGroups = useMemo(() => getDynamicBiomarkerGroups(biomarkerData), [biomarkerData])
-
-  // Memoize handlers
-  const handleDateRangeChange = useCallback((value: string) => {
-    setDateRange(value)
-  }, [])
-
-  const handleUploadClick = useCallback(() => {
-    setShowUpload(prev => !prev)
-  }, [])
-
-  const handleExportClick = useCallback(() => {
-    // Export functionality implementation
-  }, [])
-
-  const handleGroupChange = useCallback((value: string) => {
-    setSelectedGroup(value as BiomarkerGroup)
-  }, [])
 
   // Calculate summary stats
   const summaryStats = useMemo(() => {
@@ -117,50 +108,39 @@ export default function EcoTownHealthDashboard() {
     return { total, normal, outOfRange, improving }
   }, [biomarkerData, biomarkerKeys])
 
-  // Memoize handler functions
-  const handleUpload = React.useCallback(async (file: File) => {
-    setIsUploading(true)
-    setUploadError(null)
-
-    const formData = new FormData()
-    formData.append("file", file)
-
-    try {
-      const response = await fetch('/api/extract', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'An unknown error occurred' }))
-        throw new Error(`Upload failed with status ${response.status}: ${errorData.detail}`)
-      }
-
-      const extractedData = await response.json()
-      handlePDFDataExtracted(extractedData)
-    } catch (error) {
-      console.error("Error during file upload:", error)
-      if (error instanceof Error) {
-        setUploadError(error.message)
-      } else {
-        setUploadError('An unexpected error occurred. Please try again.')
-      }
-    } finally {
-      setIsUploading(false)
-    }
+  // Simple handlers
+  const handleDateRangeChange = useCallback((value: string) => {
+    setDateRange(value)
   }, [])
 
-  const handlePDFDataExtracted = React.useCallback((extractedData: any) => {
-    setPatientInfo(prev => ({ ...prev, ...extractedData.patientInfo }))
+  const handleUploadClick = useCallback(() => {
+    setShowUpload(prev => !prev)
+  }, [])
+
+  const handleExportClick = useCallback(() => {
+    handleExportReport()
+  }, [])
+
+  const handleGroupChange = useCallback((value: string) => {
+    setSelectedGroup(value as BiomarkerGroup)
+  }, [])
+
+  // Complex handlers with dependencies
+  const handlePDFDataExtracted = useCallback((extractedData: ExtractedData) => {
+    if (!extractedData?.patientInfo || !extractedData?.biomarkers) {
+      console.error('Invalid data format:', extractedData);
+      return;
+    }
+
+    setPatientInfo(prev => ({ ...prev, ...extractedData.patientInfo }));
     
     setBiomarkerData(prev => {
-      const newBiomarkerData = { ...prev }
+      const newBiomarkerData = { ...prev };
       Object.keys(extractedData.biomarkers).forEach((biomarkerName) => {
         if (newBiomarkerData[biomarkerName]) {
-          const newData = extractedData.biomarkers[biomarkerName]
-          const currentDate = extractedData.patientInfo.reportDate
+          const newData = extractedData.biomarkers[biomarkerName];
+          const currentDate = extractedData.patientInfo.reportDate;
           
-          // Create new history entry
           const newHistoryEntry = {
             value: Number.parseFloat(newData.value.toString()),
             unit: newData.unit,
@@ -168,19 +148,106 @@ export default function EcoTownHealthDashboard() {
             trend: "stable",
             date: currentDate,
             referenceRange: newData.referenceRange,
-          }
+          };
 
-          // Update biomarker data
           newBiomarkerData[biomarkerName] = {
             ...newBiomarkerData[biomarkerName],
             currentValue: newHistoryEntry,
             history: [...newBiomarkerData[biomarkerName].history, newHistoryEntry],
-          }
+          };
         }
-      })
-      return newBiomarkerData
-    })
-  }, [])
+      });
+      return newBiomarkerData;
+    });
+  }, []);
+
+  const handleUpload = useCallback(async (file: File) => {
+    setIsUploading(true);
+    setUploadError(null);
+
+    console.log('Starting file upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
+
+    if (!file.type.includes('pdf')) {
+      setUploadError('Please upload a PDF file');
+      setIsUploading(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      console.log('Sending request to /api/extract...');
+      const response = await fetch('/api/extract', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type')
+      });
+
+      // First get the response as text
+      const responseText = await response.text();
+      
+      let responseData;
+      try {
+        // Then try to parse it as JSON
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e, 'Response text:', responseText);
+        throw new Error('Server returned an invalid response format');
+      }
+
+      // Handle error responses
+      if (!response.ok) {
+        const errorMessage = responseData.error || 'Unknown server error';
+        const errorDetails = responseData.details ? `: ${responseData.details}` : '';
+        throw new Error(`${errorMessage}${errorDetails}`);
+      }
+
+      // Validate response data
+      if (!responseData.biomarkers || typeof responseData.biomarkers !== 'object') {
+        console.error('Invalid response structure:', responseData);
+        throw new Error('Server returned invalid data format');
+      }
+
+      console.log('Successfully processed file:', {
+        biomarkerCount: Object.keys(responseData.biomarkers).length
+      });
+
+      setUploadedBiomarkerData({
+        timestamp: new Date().toISOString(),
+        patientInfo: responseData.patientInfo,
+        biomarkers: responseData.biomarkers
+      });
+      
+      handlePDFDataExtracted(responseData);
+    } catch (error) {
+      console.error("Error during file upload:", {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      
+      // Set a user-friendly error message
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload file';
+      setUploadError(errorMessage.includes('service is unavailable') 
+        ? 'The processing service is currently unavailable. Please try again later.'
+        : errorMessage);
+    } finally {
+      setIsUploading(false);
+    }
+  }, [handlePDFDataExtracted]);
 
   const handleExportReport = () => {
     const reportData = {
@@ -216,6 +283,11 @@ export default function EcoTownHealthDashboard() {
     URL.revokeObjectURL(url)
   }
 
+  // Effects
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+
   // Render functions
   const renderBiomarkerChart = useCallback((group: BiomarkerGroup) => {
     const groupData = biomarkerGroups[group]
@@ -239,11 +311,6 @@ export default function EcoTownHealthDashboard() {
       </motion.div>
     )
   }, [biomarkerGroups, dateRange, handleDateRangeChange])
-
-  const [isClient, setIsClient] = useState(false)
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -287,7 +354,7 @@ export default function EcoTownHealthDashboard() {
               <div className="space-y-1">
                 <h3 className="text-sm font-semibold text-gray-900 tracking-tight">Last Uploaded Report</h3>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  Processed on {new Date(uploadedBiomarkerData.timestamp).toLocaleString()}
+                  Processed on {uploadedBiomarkerData.timestamp ? new Date(uploadedBiomarkerData.timestamp).toLocaleString() : 'Unknown'}
                 </p>
               </div>
               <Badge variant="outline" className="text-xs self-start sm:self-center">

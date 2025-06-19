@@ -1,44 +1,111 @@
 // Path: app/api/extract/route.ts
 
-import { NextRequest, NextResponse } from 'next/server'
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { NextRequest, NextResponse } from 'next/server';
 
-// Set the workerSrc to ensure it works correctly in the Vercel serverless environment
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.mjs`
-
-export const runtime = 'nodejs'
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData()
-    const file = formData.get('file') as File
+    const formData = await req.formData();
+    const uploadedFile = formData.get('file');
 
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
+    if (!uploadedFile || !(uploadedFile instanceof File)) {
+      return NextResponse.json(
+        { error: 'No file uploaded or invalid file format' },
+        { status: 400 }
+      );
     }
 
-    const arrayBuffer = await file.arrayBuffer()
-    const data = new Uint8Array(arrayBuffer)
-
-    const pdf = await pdfjsLib.getDocument({ data }).promise
-
-    let text = ''
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i)
-      const content = await page.getTextContent()
-      // Type guard to ensure item has 'str' property
-      text += content.items.map((item: any) => ('str' in item ? item.str : '')).join(' ') + '\n'
+    if (!uploadedFile.type.includes('pdf')) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid file type. Please upload a PDF file.',
+          details: `Received file type: ${uploadedFile.type}`
+        },
+        { status: 400 }
+      );
     }
 
-    if (text.trim().length > 100) {
-      return NextResponse.json({ text, method: 'pdfjs' })
-    } else {
-      return NextResponse.json({ text: '', method: 'ocr-needed' })
+    const railwayUrl = 'https://passionate-eagerness-production-3c4a.up.railway.app/extract';
+    const forwardFormData = new FormData();
+    forwardFormData.append('file', uploadedFile);
+
+    try {
+      const response = await fetch(railwayUrl, {
+        method: 'POST',
+        body: forwardFormData,
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      const responseText = await response.text();
+      console.log('Railway response:', responseText);
+
+      try {
+        const data = JSON.parse(responseText);
+        return NextResponse.json(data, { 
+          status: response.ok ? 200 : 502,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (parseError) {
+        console.error('Failed to parse Railway response:', responseText);
+        return NextResponse.json(
+          {
+            error: 'Invalid response from processing service',
+            details: responseText.substring(0, 200)
+          },
+          { 
+            status: 502,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      }
+    } catch (networkError) {
+      console.error('Network error:', networkError);
+      return NextResponse.json(
+        {
+          error: 'Failed to reach processing service',
+          details: networkError instanceof Error ? networkError.message : 'Unknown error'
+        },
+        { 
+          status: 503,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
     }
-  } catch (err) {
-    console.error("PDF Extraction Error:", err)
-    // Proper error handling
-    const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred'
-    return NextResponse.json({ error: 'Extraction failed', details: errorMessage }, { status: 500 })
+  } catch (error) {
+    console.error('Upload handler error:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
   }
+}
+
+export async function OPTIONS(req: NextRequest) {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }

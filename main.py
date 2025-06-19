@@ -1,25 +1,31 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.cors import ALL_METHODS
+from fastapi.responses import JSONResponse
+from fastapi.requests import Request
+from fastapi import status
 import re
 from pdf2image import convert_from_bytes
 from PyPDF2 import PdfReader
 from io import BytesIO
 import logging
 import os
-
-
+  
 app = FastAPI()
 
+# --- Add this CORS configuration ---
+origins = [
+    # This is the URL of your frontend application
+    "https://biomarker-insight-dashboard.netlify.app",
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https:\/\/.*(vercel|netlify)\.app",
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
+# ------------------------------------
 
 logging.basicConfig(level=logging.INFO)
 
@@ -249,3 +255,11 @@ async def extract_pdf(file: UploadFile = File(...)):
         "patientInfo": result["patient_info"],
         "biomarkers": result["biomarkers"]
     }
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logging.error(f"Unhandled error: {exc}")
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"error": "Internal server error", "details": str(exc)}
+    )
