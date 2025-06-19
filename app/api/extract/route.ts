@@ -32,10 +32,10 @@ export async function POST(req: NextRequest) {
     const forwardFormData = new FormData();
     forwardFormData.append('file', uploadedFile);
 
-    try {
-      const response = await fetch(railwayUrl, {
+    try {      const response = await fetch(railwayUrl, {
         method: 'POST',
         body: forwardFormData,
+        credentials: 'include',
         headers: {
           'Accept': 'application/json',
         },

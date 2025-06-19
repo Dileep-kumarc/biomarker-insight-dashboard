@@ -13,17 +13,24 @@ import os
   
 app = FastAPI()
 
-# --- Add this CORS configuration ---
+# CORS Configuration
 origins = [
-    # This is the URL of your frontend application
     "https://biomarker-insight-dashboard.netlify.app",
+    "http://localhost:3000",
+    "http://localhost",
+    "https://biomarker-insight-dashboard.netlify.app",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1",
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins,  # Use specific origins
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=ALL_METHODS,  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+    expose_headers=["*"],  # Expose all headers
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 # ------------------------------------
 
