@@ -255,6 +255,7 @@ export default function EcoTownHealthDashboard() {
         onUploadClick={handleUploadClick}
         onExportClick={handleExportClick}
         summaryStats={summaryStats}
+        isClient={isClient}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

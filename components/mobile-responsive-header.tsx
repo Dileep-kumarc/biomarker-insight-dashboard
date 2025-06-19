@@ -27,6 +27,7 @@ interface MobileResponsiveHeaderProps {
     outOfRange: number
     improving: number
   }
+  isClient: boolean;
 }
 
 export function MobileResponsiveHeader({
@@ -36,12 +37,23 @@ export function MobileResponsiveHeader({
   onUploadClick,
   onExportClick,
   summaryStats,
+  isClient,
 }: MobileResponsiveHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const handleDateRangeChange = useCallback((value: string) => {
     onDateRangeChange(value)
   }, [onDateRangeChange])
+
+  if (!isClient) {
+    return (
+      <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 h-[88px]">
+          {/* Placeholder for header */}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white/80 backdrop-blur-md shadow-sm border-b border-blue-100/50 sticky top-0 z-50">
